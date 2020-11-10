@@ -1,13 +1,17 @@
+import os
 from flask import Flask, jsonify, request
-from io import BytesIO
 from PIL import Image
 from vietocr.tool.predictor import Predictor
 from vietocr.tool.config import Cfg
 import time
+import json
 
+
+from dotenv import load_dotenv
+load_dotenv()
 
 config = Cfg.load_config_from_name('vgg_seq2seq')
-config['device'] = 'cpu'
+config['device'] = os.getenv('SUGGESTOR_DEVICE')
 config['predictor']['beamsearch'] = False
 model = Predictor(config)
 
@@ -24,26 +28,38 @@ app = Flask(__name__)
 
 def create_error_result(error=None):
     query_result = {
-        'results': 'Error: ' + str(error)
+        'error': 'Error: ' + str(error)
     }
     return query_result
 
 
-@app.route("/query", methods=['GET', 'POST'])
+def parseRegionJson(jsonStr):
+    jsonObj = json.loads(jsonStr)
+    regions = []
+    for item in jsonObj['regions']:
+        newRegion = []
+        for coord in item:
+            newRegion.append([coord])
+        regions.append(newRegion)
+    return regions
+
+
+@app.route('/query', methods=['POST'])
 def queryimg():
-    result = None
-    if request.method == "POST":
-        data = request.get_data()
-        try:
-            img = Image.open(BytesIO(data))
-            start = time.time()
-            result_text = model.predict(img)
-            time_pred = str(time.time() - start)
-            result = {"result: ": result_text, "predict time": time_pred}
-            return jsonify_str(result)
-        except Exception as ex:
-            return jsonify(create_error_result(ex))
+    imgData = request.files['file']
+    regionJson = request.form['regionJson']
+    regions = parseRegionJson(regionJson)
+    try:
+        img = Image.open(imgData)
+        start = time.time()
+        label_predicts = model.predict_with_boxes(img, regions)
+        time_pred = str(time.time() - start)
+        result = {'result': label_predicts, 'predict time': time_pred}
+        return jsonify_str(result)
+    except Exception as ex:
+        return jsonify(create_error_result(ex))
 
 
-if __name__ == "__main__":
-    app.run("localhost", 1912, threaded=True, debug=False)
+if __name__ == '__main__':
+    app.run('localhost', os.getenv('SUGGESTOR_PORT'),
+            threaded=True, debug=True)
