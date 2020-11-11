@@ -49,12 +49,11 @@ def queryimg():
         start = time.time()
         label_predicts = model.predict_with_boxes(img, regions)
         time_pred = str(time.time() - start)
-        result = {'result': label_predicts, 'predict time': time_pred}
+        result = {'result': label_predicts, 'predict_time': time_pred}
         return jsonify_str(result)
     except Exception as ex:
         return jsonify(create_error_result(ex))
 
 
 if __name__ == '__main__':
-    app.run('localhost', os.getenv('SUGGESTOR_PORT'),
-            threaded=True, debug=True)
+    app.run('localhost', 7000, threaded=True, debug=True)
