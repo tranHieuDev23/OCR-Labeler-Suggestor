@@ -1,4 +1,3 @@
-import os
 from flask import Flask, jsonify, request
 from PIL import Image
 from vietocr.tool.predictor import Predictor
@@ -6,12 +5,8 @@ from vietocr.tool.config import Cfg
 import time
 import json
 
-
-from dotenv import load_dotenv
-load_dotenv()
-
-config = Cfg.load_config_from_name('vgg_seq2seq')
-config['device'] = os.getenv('SUGGESTOR_DEVICE')
+config = Cfg.load_config_from_file('config/vgg-seq2seq.yml')
+config['device'] = 'cpu'
 config['predictor']['beamsearch'] = False
 model = Predictor(config)
 
