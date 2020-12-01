@@ -13,15 +13,13 @@ def download_weights(id_or_url, cached=None, md5=None, quiet=False):
     return gdown.cached_download(url=url, path=cached, md5=md5, quiet=quiet)
 
 
-def download_config(id):
-    url = 'https://drive.google.com/uc?id={}'.format(id)
-    output = gdown.download(url, quiet=True)
-    
-    with open(output, encoding='utf-8') as f:
+def download_config(fname):
+
+    with open(fname, encoding='utf-8') as f:
         config = yaml.safe_load(f)
-    os.remove(output)
 
     return config
+
 
 def compute_accuracy(ground_truth, predictions, mode='full_sequence'):
     """
@@ -74,6 +72,7 @@ def compute_accuracy(ground_truth, predictions, mode='full_sequence'):
             else:
                 avg_accuracy = 0
     else:
-        raise NotImplementedError('Other accuracy compute mode has not been implemented')
+        raise NotImplementedError(
+            'Other accuracy compute mode has not been implemented')
 
     return avg_accuracy
